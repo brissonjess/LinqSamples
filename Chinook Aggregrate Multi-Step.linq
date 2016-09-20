@@ -1,57 +1,60 @@
 <Query Kind="Statements">
   <Connection>
-    <ID>b0178653-2d83-4bc5-9445-f9ffbe554308</ID>
+    <ID>55ecb918-45ca-426c-bd18-f56c606b274b</ID>
     <Persist>true</Persist>
     <Server>.</Server>
     <Database>Chinook</Database>
   </Connection>
 </Query>
 
+//a statement has a receiving variable which is set
+//by the result of a query
+
 //when you need to use multiple steps
 //to solve a problem, switch your Language
 //choice to either Statement(s) or Program
 
-//the results of each query will now be save in a variable
-//the variable can then be used in future queries
-
 var maxcount = (from x in MediaTypes
-	select x.Tracks.Count ()).Max();
-	
+				select x.Tracks.Count()).Max();
+
 //to display the contents of a variable in LinqPad
 // you use the method .Dump()
 maxcount.Dump();
 
+//to filter data you can use the Where clause
+//uses a previously creae variable value in
+// a following statement
+var mediatypecounts = from x in MediaTypes
+				where x.Tracks.Count() == maxcount 
+				select new{
+					Name = x.Name,
+					TrackCount = x.Tracks.Count()
+				};
+mediatypecounts.Dump();
 
-//use a value in a preceeding create variable
-var popularMediaType = from x in MediaTypes
-						where x.Tracks.Count() == maxcount
-						select new{
-								Type = x.Name,
-								TCount = x.Tracks.Count ()
-						};
-popularMediaType.Dump();
+//Can this set of statements be written as one complete query?
+//the answer: possibly; and in this case yes
+//In this example maxcount could be exchanged for the query that
+//  actually created the value in the first place
+//This subsitution query is a nested query (subquery)
+//The nested query needs its on instance indentifier
+var mediatypecountsNested = from x in MediaTypes
+				where x.Tracks.Count() == (from y in MediaTypes
+										select y.Tracks.Count()).Max() 
+				select new{
+					Name = x.Name,
+					TrackCount = x.Tracks.Count()
+				};
+mediatypecountsNested.Dump();
 
-//Can this set of statements be been as one complete query
-//the answer is possibly, and in this case yes
-//in this example maxcount could be exchanged for the query that
-//   actually create the value in the first place
-//   this subsituted query is a subquery
-var popularMediaTypeSubQuery = from x in MediaTypes
-						where x.Tracks.Count() == (from y in MediaTypes
-													select y.Tracks.Count ()).Max()
-						select new{
-								Type = x.Name,
-								TCount = x.Tracks.Count ()
-						};
-popularMediaTypeSubQuery.Dump();
-
-//using the method syntax to determine the count value for the where expression
-//this demonstrates that queries can be constructed using both query syntax and method syntax
-var popularMediaTypeSubMethod = from x in MediaTypes
-						where x.Tracks.Count() == 
-									MediaTypes.Select (mt => mt.Tracks.Count ()).Max()
-						select new{
-								Type = x.Name,
-								TCount = x.Tracks.Count ()
-						};
-popularMediaTypeSubMethod.Dump();
+//using a method syntax to determine the count value for the where expression.
+//this demonstrates that queries can be constructed using
+//  both query syntax and method syntax
+var mediatypecountsMethod = from x in MediaTypes
+				where x.Tracks.Count() == 
+						MediaTypes.Select(y => y.Tracks.Count()).Max() 
+				select new{
+					Name = x.Name,
+					TrackCount = x.Tracks.Count()
+				};
+mediatypecountsMethod.Dump();
