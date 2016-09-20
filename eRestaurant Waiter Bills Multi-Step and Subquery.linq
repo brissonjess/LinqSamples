@@ -1,45 +1,46 @@
 <Query Kind="Statements">
   <Connection>
-    <ID>8751cd65-60c5-4775-94a1-1328b8a2efd6</ID>
+    <ID>17bc5634-44bb-48fd-90f5-db9969c64834</ID>
     <Persist>true</Persist>
     <Server>.</Server>
     <Database>eRestaurant</Database>
   </Connection>
 </Query>
 
-//find the waiter with the most bills
-//multiple step solution
-var maxbills = (from x in Waiters
-				select x.Bills.Count()).Max();
+//Find the waiter with the most bills
 
+// a) get a list of bill counts by waiter and determine the max
+var maxbillcount = (from x in Waiters
+					select x.Bills.Count()).Max();
+					
+// b) using the maxbillcount on the where clause, find
+//    the waiter that matches the count
 var BestWaiter = from x in Waiters
-				where x.Bills.Count ( )== maxbills
+				where x.Bills.Count() == maxbillcount
 				select new{
-						Name = x.FirstName + " " + x.LastName};
-
+					Name = x.FirstName + " " + x.LastName
+				};
 BestWaiter.Dump();
-//subquery style
-var BestWaiterSubQuery = from x in Waiters
-				where x.Bills.Count ( )== (from y in Waiters
-											select y.Bills.Count()).Max()
-				select new{
-						Name = x.FirstName + " " + x.LastName};
-
-BestWaiterSubQuery.Dump();
-//create a dataset which contains the summary bill info by waiter	
-var WaiterBills = from x in Waiters
-				 orderby x.LastName, x.FirstName
-				 select new {
-				 	Name = x.LastName + ", " + x.FirstName,
-					TotalBillCount = x.Bills.Count(),
-					BillInfo = (from y in x.Bills
-								where y.BillItems.Count () > 0
-								select new{
-										BillID = y.BillID,
-										BillDate = y.BillDate,
-										TableID = y.TableID,
-										Total = y.BillItems.Sum(b => b.SalePrice * b.Quantity)
-										}
-								)
-							};
-WaiterBills.Dump();
+				
+//create a dataset that has an unknown number of records
+// associate with a data value. 
+//A list of all bills associated with the waiter. List all waiters.
+//The inner nested query uses the associated Bill records
+//  of the currently processing Waiter --> x.Collection
+var waiterbills = from x in Waiters
+					orderby x.LastName, x.FirstName
+					select new {
+							Name = x.LastName + ", " + x.FirstName,
+							TotalBillCount = x.Bills.Count(),
+							BillInfo = (from y in x.Bills
+										where y.BillItems.Count() > 0
+										select new {
+											BillId = y.BillID,
+											BillDate = y.BillDate,
+											TableID = y.TableID,
+											Total = y.BillItems.Sum(b => b.SalePrice * b.Quantity)
+													}
+										)
+								};
+waiterbills.Dump();
+					
