@@ -1,6 +1,6 @@
 <Query Kind="Expression">
   <Connection>
-    <ID>55ecb918-45ca-426c-bd18-f56c606b274b</ID>
+    <ID>03e2069a-f1a2-419a-8737-9f7911297712</ID>
     <Persist>true</Persist>
     <Server>.</Server>
     <Database>Chinook</Database>
@@ -37,7 +37,7 @@ select new {
 //   a delegate to indicate the collection instance attribute to be used
 from x in Albums
 where x.Tracks.Count() > 0
-orderby x.Title
+orderby x.Tracks.Count(), x.Title
 select new{
 		Title = x.Title,
 		TotalTracksforAlbum = x.Tracks.Count(),
@@ -46,7 +46,30 @@ select new{
 		AverageTrackLengthB = x.Tracks.Average(y => y.Milliseconds/1000)
 }
 
-
-
-
-
+//To get both the albums with tracks and without tracks you can use a .Union()
+//In a union you need to ensure cast typing is correct and columns cast types match identically
+//Since Average returns a double, the division in the first part of the union needs
+//   to be done as Double, therefore the value 1000 (int) is properly set up as a double.
+//Note the sorting is as method syntax on the Union
+//
+// (query1).Union(query2).Union(queryn).OrderBy(first sort).ThenBy(nth sort)
+(from x in Albums
+	where x.Tracks.Count() > 0
+	select new{
+		Title = x.Title,
+		TotalTracksforAlbum = x.Tracks.Count(),
+		TotalPriceForalbumtracks = x.Tracks.Sum(y => y.UnitPrice),
+		AverageTrackLengthA = x.Tracks.Average(y => y.Milliseconds)/1000.0,
+		AverageTrackLengthB = x.Tracks.Average(y => y.Milliseconds/1000.0)
+		}
+).Union(
+	from x in Albums
+	where x.Tracks.Count() == 0
+	select new{
+			Title = x.Title,
+			TotalTracksforAlbum = 0,
+			TotalPriceForalbumtracks = 0.00m,
+			AverageTrackLengthA = 0.00,
+			AverageTrackLengthB = 0.00
+		}
+).OrderBy(y => y.TotalTracksforAlbum).ThenBy(y => y.Title)
